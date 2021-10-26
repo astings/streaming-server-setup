@@ -1,0 +1,46 @@
+stream.domain_name.domain {
+
+  import /etc/caddy/caddy_security.conf
+
+  reverse_proxy * 192.168.1.240:8096
+
+  log {
+        output file /var/log/caddy/jellyfin_access.log
+        format single_field common_log
+  }
+}
+
+radarr.domain_name.domain {
+
+  # import /etc/caddy/caddy_security.conf
+
+  log {
+        output file /var/log/caddy/radarr_access.log
+        format single_field common_log
+  }
+
+  reverse_proxy * 192.168.1.240:7878
+
+}
+
+sonarr.domain_name.domain {
+
+  import /etc/caddy/caddy_security.conf
+
+  log {
+        output file /var/log/caddy/sonarr_access.log
+        format single_field common_log
+  }
+
+  reverse_proxy * 192.168.1.240:8989
+
+}
+
+transmission.domain_name.domain {
+
+  import /etc/caddy/caddy_security.conf
+
+  log {
+        output file /var/log/caddy/transmission_access.log
+        format single_field common_log
+  }

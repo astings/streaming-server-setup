@@ -1,0 +1,157 @@
+version: "2"
+services:
+  vpn:
+    image: ghcr.io/bubuntux/nordvpn
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    environment:
+      - USER=XXX
+      - PASS=XXX
+      - CONNECT=P2P
+      - TECHNOLOGY=NordLynx
+      - NETWORK=192.168.1.0/24
+      - CHECK_CONNECTION_INTERVAL=600
+      - TZ=Europe/London
+    ports:
+      - 9091:9091
+      - 51413:51413
+      - 51413:51413/udp
+
+  transmission:
+    image: ghcr.io/linuxserver/transmission
+    network_mode: service:vpn
+    restart: unless-stopped
+    environment:
+      - PUID=998
+      - PGID=100
+      - TZ=Europe/London
+      - USER=XXX
+      - PASS=XXX
+    volumes:
+      - /etc/transmission:/config
+      - /srv/dev-disk-by-uuid-xxx/data:/data
+    depends_on:
+      - vpn
+
+  sonarr:
+    container_name: sonarr
+    image: ghcr.io/linuxserver/sonarr
+    restart: unless-stopped
+    networks:
+      - jellyfin
+    ports:
+      - 8989:8989
+    environment:
+      - TZ=Europe/London
+      - PUID=998
+      - PGID=100
+      - UMASK=022
+    volumes:
+      - /etc/sonarr:/config
+      - /srv/dev-disk-by-uuid-xxx/data:/data
+
+  radarr:
+    container_name: radarr
+    image: ghcr.io/linuxserver/radarr
+    restart: unless-stopped
+    networks:
+      - jellyfin
+    ports:
+      - 7878:7878
+    environment:
+      - TZ=Europe/London
+      - PUID=998
+      - PGID=100
+      - UMASK=022
+    volumes:
+      - /etc/radarr:/config
+      - /srv/dev-disk-by-uuid-xxx/data:/data
+
+  jackett:
+    container_name: jackett
+    image: linuxserver/jackett
+    restart: unless-stopped
+    networks:
+      - jellyfin
+    ports:
+      - 9117:9117
+    environment:
+      - TZ=Europe/London
+      - PUID=998
+      - PGID=100
+      - UMASK=022
+    volumes:
+      - /etc/jackett:/config
+
+  bazarr:
+    image: ghcr.io/linuxserver/bazarr
+    container_name: bazarr
+    networks:
+      - jellyfin
+    environment:
+      - PUID=998
+      - PGID=100
+      - TZ=Europe/London
+    volumes:
+      - /etc/bazarr:/config
+      - /srv/dev-disk-by-uuid-xxx/data/media:/media
+    ports:
+      - 6767:6767
+    restart: unless-stopped
+
+  jellyfin:
+    image: ghcr.io/linuxserver/jellyfin
+    container_name: jellyfin
+    networks:
+      - jellyfin
+    environment:
+      - PUID=998
+      - PGID=100
+      - TZ=Europe/London
+    volumes:
+      - /etc/jellyfin:/config
+      - /srv/dev-disk-by-uuid-xxx/data:/data
+      - /opt/vc/lib:/opt/vc/lib
+    ports:
+      - 8096:8096
+      - 8097:8097
+      - 1900:1900/udp
+    devices:
+      - /dev/dri:/dev/dri
+      - /dev/video10:/dev/video10
+      - /dev/video11:/dev/video11
+      - /dev/video12:/dev/video12
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:latest
+    restart: unless-stopped
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - /etc/caddy:/etc/caddy
+      - /etc/caddy/data:/data
+      - /etc/caddy/config:/config
+      - /var/log/caddy:/var/log
+
+  ombi:
+    image: ghcr.io/linuxserver/ombi
+    container_name: ombi
+    networks:
+      - jellyfin
+    environment:
+      - PUID=998
+      - PGID=100
+      - TZ=Europe/London
+    volumes:
+      - /etc/config:/config
+    ports:
+      - 3579:3579
+    restart: unless-stopped
+
+networks:
+  jellyfin:
+    driver: bridge
